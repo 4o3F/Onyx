@@ -1,0 +1,8 @@
+base_url = "http://localhost"
+team_csv = "team.csv"
+contest_id = "test"
+solutions_path = "solutions"
+wrong_solution_probability = 0.7
+
+[logging]
+level = "info"
