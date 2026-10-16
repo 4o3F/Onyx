@@ -78,6 +78,7 @@ async fn run_login_flow(user: &mut GooseUser, assigned_team: &AssignedUser) -> T
         .text("_csrf_token", csrf_token);
     let login_url = user.build_url("/login")?;
     let login_client = reqwest::Client::builder()
+        .danger_accept_invalid_certs(user.config.accept_invalid_certs)
         .redirect(Policy::none())
         .build()
         .map_err(|error| Box::new(TransactionError::Reqwest(error)))?;

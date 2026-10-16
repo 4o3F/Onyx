@@ -39,9 +39,13 @@ pub async fn run_preflight_checks(
     config_dir: Option<&Path>,
 ) -> anyhow::Result<PreflightSummary> {
     validate_required_config_fields(config)?;
-    validate_contest_window(config).await?;
+    let client = reqwest::Client::builder()
+        .danger_accept_invalid_certs(config.accept_invalid_certs)
+        .build()
+        .context("failed to build pre-flight HTTP client")?;
+    validate_contest_window(config, &client).await?;
 
-    let problems = fetch_contest_problems(config).await?;
+    let problems = fetch_contest_problems(config, &client).await?;
     let solutions_root = validate_solutions_layout(config_dir, &config.solutions_path, &problems)?;
 
     let problem_short_names = problems
@@ -84,10 +88,10 @@ fn validate_required_config_fields(config: &Config) -> anyhow::Result<()> {
     Ok(())
 }
 
-async fn validate_contest_window(config: &Config) -> anyhow::Result<()> {
+async fn validate_contest_window(config: &Config, client: &reqwest::Client) -> anyhow::Result<()> {
     let contests_url = format!("{}/api/v4/contests", config.base_url.trim_end_matches('/'));
 
-    let response = reqwest::Client::new()
+    let response = client
         .get(&contests_url)
         .send()
         .await
@@ -147,14 +151,17 @@ async fn validate_contest_window(config: &Config) -> anyhow::Result<()> {
     Ok(())
 }
 
-async fn fetch_contest_problems(config: &Config) -> anyhow::Result<Vec<ContestProblemSummary>> {
+async fn fetch_contest_problems(
+    config: &Config,
+    client: &reqwest::Client,
+) -> anyhow::Result<Vec<ContestProblemSummary>> {
     let problems_url = format!(
         "{}/api/v4/contests/{}/problems",
         config.base_url.trim_end_matches('/'),
         config.contest_id
     );
 
-    let response = reqwest::Client::new()
+    let response = client
         .get(&problems_url)
         .send()
         .await

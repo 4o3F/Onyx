@@ -33,6 +33,25 @@
 
 ```
 
+### Self-signed HTTPS certificates
+
+HTTPS certificates are validated by default. For a trusted test environment using a
+self-signed certificate, add this at the top level of `config.toml` (before `[logging]`):
+
+```toml
+base_url = "https://localhost"
+accept_invalid_certs = true
+```
+
+This setting applies to pre-flight API checks, login (including redirects), and all
+Goose load-test requests. Omitting it or setting it to `false` keeps certificate
+validation enabled.
+
+> [!WARNING]
+> This option disables certificate validation, not just trust checks for one
+> self-signed certificate. It leaves connections vulnerable to man-in-the-middle
+> attacks. Use it only in trusted test environments, never against untrusted systems.
+
 ### `team.csv` format
 
 `team.csv` follows the same format as **Natsume**: http://github.com/4o3F/Natsume

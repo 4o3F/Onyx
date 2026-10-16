@@ -36,6 +36,12 @@ async fn main() -> anyhow::Result<()> {
         return Ok(());
     }
 
+    if config.accept_invalid_certs {
+        tracing::warn!(
+            "HTTPS certificate validation is disabled; use only with trusted test environments"
+        );
+    }
+
     let preflight_summary = match run_preflight_checks(&config, config_dir.as_deref()).await {
         Ok(summary) => summary,
         Err(error) => {
@@ -75,6 +81,7 @@ async fn main() -> anyhow::Result<()> {
 
     let mut goose_config = GooseConfiguration::default();
     goose_config.host = config.base_url.clone();
+    goose_config.accept_invalid_certs = config.accept_invalid_certs;
     goose_config.users = Some(participant_users);
     // Launch all users within ~1s to generate a near-instant spike.
     goose_config.hatch_rate = Some(participant_users.to_string());

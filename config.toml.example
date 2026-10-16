@@ -1,4 +1,7 @@
 base_url = "http://localhost"
+# Set true only for trusted test environments using self-signed certificates.
+# WARNING: disables HTTPS certificate validation for all requests.
+accept_invalid_certs = false
 team_csv = "team.csv"
 contest_id = "test"
 solutions_path = "solutions"

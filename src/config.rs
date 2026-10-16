@@ -11,6 +11,9 @@ pub struct Config {
     pub logging: LoggingConfig,
     /// Base URL of the target system under test.
     pub base_url: String,
+    /// Disable HTTPS certificate validation for self-signed test environments only.
+    #[serde(default)]
+    pub accept_invalid_certs: bool,
     /// Path to the team credentials CSV file (`id,username,password`).
     pub team_csv: String,
     /// Contest machine-readable identifier (`id`) used for pre-flight validation.
@@ -28,6 +31,7 @@ impl Default for Config {
         Self {
             logging: LoggingConfig::default(),
             base_url: String::new(),
+            accept_invalid_certs: false,
             team_csv: String::new(),
             contest_id: String::new(),
             solutions_path: default_solutions_path(),
