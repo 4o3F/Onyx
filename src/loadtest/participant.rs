@@ -88,7 +88,7 @@ pub async fn participant_user_flow(user: &mut GooseUser) -> TransactionResult {
             return Err(error);
         }
         if matches!(chosen_solution, SolutionKind::Ac) {
-            mark_problem_accepted(user, problem.id);
+            mark_problem_accepted(user, &problem.id);
         }
 
         if let Err(error) = random_wait_up_to(&assigned_team.username, 10, "before first scoreboard").await {

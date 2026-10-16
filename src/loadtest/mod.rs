@@ -28,7 +28,7 @@ struct LoadTestContext {
 
 #[derive(Debug, Clone)]
 pub(super) struct ContestProblemAsset {
-    pub id: u32,
+    pub id: String,
     pub short_name: String,
     pub ac_filename: String,
     pub ac_code: String,
@@ -49,7 +49,7 @@ struct AssignedUser {
     password: String,
     login_completed: bool,
     session_cookie: Option<String>,
-    accepted_problem_ids: HashSet<u32>,
+    accepted_problem_ids: HashSet<String>,
     last_solution_kind: Option<SolutionKind>,
 }
 
@@ -167,9 +167,9 @@ pub(super) fn pick_random_unsolved_problem(user: &GooseUser) -> Option<ContestPr
     Some(unsolved[picked_index].clone())
 }
 
-pub(super) fn mark_problem_accepted(user: &mut GooseUser, problem_id: u32) {
+pub(super) fn mark_problem_accepted(user: &mut GooseUser, problem_id: &str) {
     let assigned = user.get_session_data_unchecked_mut::<AssignedUser>();
-    assigned.accepted_problem_ids.insert(problem_id);
+    assigned.accepted_problem_ids.insert(problem_id.to_owned());
 }
 
 pub(super) fn all_problems_accepted(user: &GooseUser) -> bool {
@@ -188,7 +188,7 @@ fn load_contest_problem_assets(
         let (ac_filename, ac_code) = load_solution_source_file(&problem_dir, "ac")?;
         let (tle_filename, tle_code) = load_solution_source_file(&problem_dir, "tle")?;
         assets.push(ContestProblemAsset {
-            id: problem.id,
+            id: problem.id.clone(),
             short_name: problem.short_name.clone(),
             ac_filename,
             ac_code,

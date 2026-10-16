@@ -17,7 +17,7 @@ pub struct PreflightSummary {
 
 #[derive(Debug, Clone)]
 pub struct ContestProblemInfo {
-    pub id: u32,
+    pub id: String,
     pub short_name: String,
 }
 
@@ -30,7 +30,7 @@ struct ContestSummary {
 
 #[derive(Debug, Deserialize)]
 struct ContestProblemSummary {
-    id: u32,
+    id: String,
     short_name: String,
 }
 
@@ -55,7 +55,7 @@ pub async fn run_preflight_checks(
     let problems = problems
         .iter()
         .map(|problem| ContestProblemInfo {
-            id: problem.id,
+            id: problem.id.clone(),
             short_name: problem.short_name.clone(),
         })
         .collect::<Vec<_>>();
@@ -188,7 +188,7 @@ async fn fetch_contest_problems(
     }
 
     for problem in &problems {
-        if problem.id == 0 {
+        if problem.id.trim().is_empty() {
             bail!("contest '{}' has a problem with empty id", config.contest_id);
         }
         if problem.short_name.trim().is_empty() {

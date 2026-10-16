@@ -36,7 +36,7 @@ pub(in crate::loadtest) async fn submit_problem_once(
     };
     let form = multipart::Form::new()
         .part("submit_problem[code][]", code_part)
-        .text("submit_problem[problem]", problem.id.to_string())
+        .text("submit_problem[problem]", problem.id.clone())
         .text("submit_problem[language]", language.to_string())
         .text("submit_problem[entry_point]", String::new())
         .text("submit_problem[_token]", submit_token);
