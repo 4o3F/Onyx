@@ -16,7 +16,7 @@ pub(in crate::loadtest) async fn submit_problem_once(
         _ => return submission_error("missing session cookie for submission"),
     };
 
-    let submit_token = get_submit_token(user, session_cookie).await?;
+    let (submit_token, code_field_name) = get_submit_form_fields(user, session_cookie).await?;
     let (source_filename, source_code) = match solution_kind {
         SolutionKind::Ac => (&problem.ac_filename, &problem.ac_code),
         SolutionKind::Tle => (&problem.tle_filename, &problem.tle_code),
@@ -35,7 +35,7 @@ pub(in crate::loadtest) async fn submit_problem_once(
         Err(_) => return submission_error("invalid source mime type"),
     };
     let form = multipart::Form::new()
-        .part("submit_problem[code][]", code_part)
+        .part(code_field_name, code_part)
         .text("submit_problem[problem]", problem.id.clone())
         .text("submit_problem[language]", language.to_string())
         .text("submit_problem[entry_point]", String::new())
@@ -75,10 +75,10 @@ pub(in crate::loadtest) async fn submit_problem_once(
     Ok(())
 }
 
-async fn get_submit_token(
+async fn get_submit_form_fields(
     user: &mut GooseUser,
     session_cookie: &str,
-) -> Result<String, Box<TransactionError>> {
+) -> Result<(String, &'static str), Box<TransactionError>> {
     let submit_url = user.build_url("/team/submit")?;
     tracing::debug!("submit page request method=GET");
     tracing::debug!("submit page request url={submit_url}");
@@ -112,10 +112,16 @@ async fn get_submit_token(
         Ok(text) => text,
         Err(error) => return submission_error(&format!("failed to read /team/submit html: {error}")),
     };
-    match extract_submit_csrf_token(&page_html) {
-        Some(token) => Ok(token),
-        None => submission_error("missing submit_problem[_token] in /team/submit html"),
-    }
+    let csrf_token = match extract_submit_csrf_token(&page_html) {
+        Some(token) => token,
+        None => return submission_error("missing submit_problem[_token] in /team/submit html"),
+    };
+    let code_field_name = match extract_code_field_name(&page_html) {
+        Some(name) => name,
+        None => return submission_error("missing source file input in /team/submit html"),
+    };
+    tracing::debug!("submit form source file input name={code_field_name}");
+    Ok((csrf_token, code_field_name))
 }
 
 fn extract_submit_csrf_token(html: &str) -> Option<String> {
@@ -133,6 +139,22 @@ fn extract_submit_csrf_token(html: &str) -> Option<String> {
     let token_start = id_pos + value_pos + value_prefix.len();
     let token_end = token_start + html[token_start..].find('"')?;
     Some(html[token_start..token_end].to_string())
+}
+
+fn extract_code_field_name(html: &str) -> Option<&'static str> {
+    let id_marker = "id=\"submit_problem_code\"";
+    let id_pos = html.find(id_marker)?;
+    let tag_start = html[..id_pos].rfind('<')?;
+    let tag_end = tag_start + html[tag_start..].find('>')? + 1;
+    let input_tag = &html[tag_start..tag_end];
+
+    if input_tag.contains("name=\"submit_problem[code][]\"") {
+        Some("submit_problem[code][]")
+    } else if input_tag.contains("name=\"submit_problem[code]\"") {
+        Some("submit_problem[code]")
+    } else {
+        None
+    }
 }
 
 fn submission_error<T>(reason: &str) -> Result<T, Box<TransactionError>> {
